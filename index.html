@@ -247,11 +247,11 @@
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     const classColors = [
-      "#dbe1e4", // Class 1 (Lightest)
+      "#dbe1e4", // Class 1
       "#b9c2c8", // Class 2
       "#8c9aa7", // Class 3
       "#656e7e", // Class 4
-      "#2c313f"  // Class 5 (Darkest)
+      "#2c313f"  // Class 5
     ];
 
     const defaultClasses = [
@@ -273,7 +273,14 @@
 
     function renderWidget() {
       const todayString = new Date().toLocaleString('en-US', { weekday: 'short' });
-      const todaysClasses = classes.filter(cls => cls.days && cls.days.includes(todayString));
+
+      // Keep track of both the class object and its original index in the main `classes` array
+      const todaysClasses = [];
+      classes.forEach((cls, originalIndex) => {
+        if (cls.days && cls.days.includes(todayString)) {
+          todaysClasses.push({ cls, originalIndex });
+        }
+      });
 
       classesListEl.innerHTML = '';
       
@@ -285,18 +292,21 @@
         return;
       }
 
-      todaysClasses.forEach((cls, index) => {
+      todaysClasses.forEach(item => {
         const btn = document.createElement('div');
         btn.className = 'class-btn';
         
-        const color = classColors[Math.min(index, classColors.length - 1)];
+        // Use its original index to pick the color so it stays consistent across days
+        const colorIndex = Math.min(item.originalIndex, classColors.length - 1);
+        const color = classColors[colorIndex];
         btn.style.backgroundColor = color;
 
-        if (index === 0) {
+        // Dark text for the lightest background (Class 1), white text for the rest
+        if (colorIndex === 0) {
           btn.style.color = '#1f2937';
         }
 
-        btn.textContent = cls.name;
+        btn.textContent = item.cls.name;
         classesListEl.appendChild(btn);
       });
     }
@@ -313,7 +323,7 @@
 
         const nameInput = document.createElement('input');
         nameInput.className = 'edit-input';
-        nameInput.placeholder = 'Class Name';
+        nameInput.placeholder = `Class ${index + 1} Name`;
         nameInput.value = cls.name;
         nameInput.oninput = (e) => {
           classes[index].name = e.target.value;
@@ -375,7 +385,7 @@
     });
 
     addBtnEl.addEventListener('click', () => {
-      classes.push({ name: 'New Class', days: ['Mon'] });
+      classes.push({ name: `Class ${classes.length + 1}`, days: ['Mon'] });
       saveClasses();
       renderWidget();
       renderEditPanel();
