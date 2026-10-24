@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Today's Classes</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    }
+
+    html, body {
+      background: transparent !important;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Widget Header Styling */
+    .widget-header-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+      user-select: none;
+    }
+
+    .widget-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .widget-title svg {
+      width: 13px;
+      height: 13px;
+      fill: #6b7280;
+    }
+
+    /* Edit Button in Header */
+    .edit-toggle-btn {
+      background: transparent;
+      border: none;
+      color: #8c9aa7;
+      cursor: pointer;
+      padding: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      opacity: 0.6;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+      margin-left: 2px;
+    }
+
+    .edit-toggle-btn:hover {
+      opacity: 1;
+      background-color: rgba(140, 154, 167, 0.15);
+    }
+
+    .edit-toggle-btn svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+
+    /* Class Pill Styling */
+    .class-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      height: 28px;
+      padding: 0 14px;
+      border-radius: 9999px;
+      border: none;
+      width: fit-content;
+      white-space: nowrap;
+      user-select: none;
+      transition: opacity 0.15s ease, transform 0.1s ease;
+    }
+
+    .class-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* No Classes Indicator */
+    .no-classes-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #8c9aa7;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      height: 28px;
+      padding: 0 14px;
+      border-radius: 9999px;
+      width: fit-content;
+      white-space: nowrap;
+      user-select: none;
+      opacity: 0.8;
+    }
+
+    /* Edit Panel Styling (White Background) */
+    .edit-panel {
+      display: none;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 310px;
+      margin-top: 4px;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .edit-panel.active {
+      display: flex;
+    }
+
+    .class-edit-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .edit-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .edit-input {
+      flex: 1;
+      padding: 5px 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .edit-input:focus {
+      border-color: #8c9aa7;
+    }
+
+    .days-selector {
+      display: flex;
+      justify-content: space-between;
+      gap: 2px;
+    }
+
+    .day-checkbox-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      color: #4b5563;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .day-checkbox-label input {
+      cursor: pointer;
+    }
+
+    .delete-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .add-btn {
+      background-color: #ffffff;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      width: 100%;
+      text-align: center;
+    }
+
+    .add-btn:hover {
+      background-color: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header with Title, Calendar Icon, and Edit Toggle -->
+    <div class="widget-header-row">
+      <div class="widget-title">
+        <!-- Calendar Icon -->
+        <svg viewBox="0 0 24 24">
+          <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
+        </svg>
+        Today
+      </div>
+      <!-- Edit Toggle Button -->
+      <button class="edit-toggle-btn" id="edit-toggle" title="Edit Schedule">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Today's Classes List Stack -->
+    <div id="classes-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
+
+    <!-- Edit Panel -->
+    <div class="edit-panel" id="edit-panel">
+      <div id="edit-items-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <button class="add-btn" id="add-btn">+ Add Class</button>
+    </div>
+  </div>
+
+  <script>
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    const classColors = [
+      "#dbe1e4", // Class 1 (Lightest)
+      "#b9c2c8", // Class 2
+      "#8c9aa7", // Class 3
+      "#656e7e", // Class 4
+      "#2c313f"  // Class 5 (Darkest)
+    ];
+
+    const defaultClasses = [
+      { name: "Intro to Psychology", days: ["Mon", "Wed", "Fri"] },
+      { name: "Calculus I", days: ["Tue", "Thu"] }
+    ];
+
+    let classes = JSON.parse(localStorage.getItem('todays_classes')) || defaultClasses;
+
+    const classesListEl = document.getElementById('classes-list');
+    const editToggleEl = document.getElementById('edit-toggle');
+    const editPanelEl = document.getElementById('edit-panel');
+    const editItemsContainerEl = document.getElementById('edit-items-container');
+    const addBtnEl = document.getElementById('add-btn');
+
+    function saveClasses() {
+      localStorage.setItem('todays_classes', JSON.stringify(classes));
+    }
+
+    function renderWidget() {
+      const todayString = new Date().toLocaleString('en-US', { weekday: 'short' });
+      const todaysClasses = classes.filter(cls => cls.days && cls.days.includes(todayString));
+
+      classesListEl.innerHTML = '';
+      
+      if (todaysClasses.length === 0) {
+        const noClassBtn = document.createElement('div');
+        noClassBtn.className = 'no-classes-btn';
+        noClassBtn.textContent = 'No Classes';
+        classesListEl.appendChild(noClassBtn);
+        return;
+      }
+
+      todaysClasses.forEach((cls, index) => {
+        const btn = document.createElement('div');
+        btn.className = 'class-btn';
+        
+        const color = classColors[Math.min(index, classColors.length - 1)];
+        btn.style.backgroundColor = color;
+
+        if (index === 0) {
+          btn.style.color = '#1f2937';
+        }
+
+        btn.textContent = cls.name;
+        classesListEl.appendChild(btn);
+      });
+    }
+
+    function renderEditPanel() {
+      editItemsContainerEl.innerHTML = '';
+      classes.forEach((cls, index) => {
+        const item = document.createElement('div');
+        item.className = 'class-edit-item';
+
+        // Row 1: Name & Delete
+        const row1 = document.createElement('div');
+        row1.className = 'edit-row';
+
+        const nameInput = document.createElement('input');
+        nameInput.className = 'edit-input';
+        nameInput.placeholder = 'Class Name';
+        nameInput.value = cls.name;
+        nameInput.oninput = (e) => {
+          classes[index].name = e.target.value;
+          saveClasses();
+          renderWidget();
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn';
+        delBtn.textContent = 'Remove';
+        delBtn.onclick = () => {
+          classes.splice(index, 1);
+          saveClasses();
+          renderWidget();
+          renderEditPanel();
+        };
+
+        row1.appendChild(nameInput);
+        row1.appendChild(delBtn);
+
+        // Row 2: All 7 Days Checkboxes
+        const daysRow = document.createElement('div');
+        daysRow.className = 'days-selector';
+
+        daysOfWeek.forEach(day => {
+          const label = document.createElement('label');
+          label.className = 'day-checkbox-label';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = cls.days && cls.days.includes(day);
+          checkbox.onchange = (e) => {
+            if (!classes[index].days) classes[index].days = [];
+            if (e.target.checked) {
+              if (!classes[index].days.includes(day)) classes[index].days.push(day);
+            } else {
+              classes[index].days = classes[index].days.filter(d => d !== day);
+            }
+            saveClasses();
+            renderWidget();
+          };
+
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(day));
+          daysRow.appendChild(label);
+        });
+
+        item.appendChild(row1);
+        item.appendChild(daysRow);
+        editItemsContainerEl.appendChild(item);
+      });
+    }
+
+    editToggleEl.addEventListener('click', () => {
+      const isActive = editPanelEl.classList.toggle('active');
+      if (isActive) {
+        renderEditPanel();
+      }
+    });
+
+    addBtnEl.addEventListener('click', () => {
+      classes.push({ name: 'New Class', days: ['Mon'] });
+      saveClasses();
+      renderWidget();
+      renderEditPanel();
+    });
+
+    // Initial render
+    renderWidget();
+  </script>
+</body>
+</html>
