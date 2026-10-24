@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Today's Classes</title>
+  <title>Today & To Do</title>
   <style>
     * {
       box-sizing: border-box;
@@ -23,9 +23,17 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 8px;
+      gap: 16px;
       padding: 0;
       margin: 0;
+    }
+
+    .section-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      width: 100%;
     }
 
     /* Widget Header Styling */
@@ -80,8 +88,8 @@
       fill: currentColor;
     }
 
-    /* Class Pill Styling */
-    .class-btn {
+    /* Pill Button Styling (Shared across Classes & Tasks) */
+    .pill-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -95,15 +103,26 @@
       width: fit-content;
       white-space: nowrap;
       user-select: none;
+      cursor: pointer;
       transition: opacity 0.15s ease, transform 0.1s ease;
     }
 
-    .class-btn:hover {
+    .pill-btn:hover {
       opacity: 0.9;
     }
 
-    /* No Classes Indicator */
-    .no-classes-btn {
+    .pill-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Completed Task Pill State */
+    .pill-btn.completed {
+      text-decoration: line-through;
+      opacity: 0.45;
+    }
+
+    /* Empty / Default Pills */
+    .empty-pill {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -120,7 +139,108 @@
       opacity: 0.8;
     }
 
-    /* Edit Panel Styling (White Background) */
+    /* To-Do Item Row */
+    .todo-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Inline Task Edit Input */
+    .todo-inline-input {
+      background-color: #ffffff;
+      border: 1px solid #8c9aa7;
+      border-radius: 9999px;
+      color: #1f2937;
+      font-size: 13px;
+      font-weight: 500;
+      height: 28px;
+      padding: 0 14px;
+      outline: none;
+      width: 180px;
+    }
+
+    /* Task Specific Edit/Delete Icon Buttons */
+    .task-action-btn {
+      background: transparent;
+      border: none;
+      color: #8c9aa7;
+      cursor: pointer;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      opacity: 0.6;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+    }
+
+    .task-action-btn:hover {
+      opacity: 1;
+      background-color: rgba(140, 154, 167, 0.15);
+    }
+
+    .task-action-btn svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+
+    .task-action-btn.delete:hover {
+      color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Plus Add Button for To-Do */
+    .add-todo-icon-btn {
+      background: transparent;
+      border: none;
+      color: #8c9aa7;
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      opacity: 0.7;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+      margin-top: 2px;
+    }
+
+    .add-todo-icon-btn:hover {
+      opacity: 1;
+      background-color: rgba(140, 154, 167, 0.15);
+    }
+
+    .add-todo-icon-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Clear Done Action Button */
+    .clear-done-btn {
+      background: transparent;
+      border: none;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      opacity: 0.75;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+      margin-top: 2px;
+    }
+
+    .clear-done-btn:hover {
+      opacity: 1;
+      background-color: rgba(107, 114, 128, 0.12);
+    }
+
+    /* Edit Panel Styling (White Background - for Classes only now) */
     .edit-panel {
       display: none;
       background-color: #ffffff;
@@ -138,7 +258,7 @@
       display: flex;
     }
 
-    .class-edit-item {
+    .edit-item {
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -180,10 +300,6 @@
       user-select: none;
     }
 
-    .day-checkbox-label input {
-      cursor: pointer;
-    }
-
     .delete-btn {
       background: #ef4444;
       color: white;
@@ -216,31 +332,54 @@
 <body>
 
   <div class="container">
-    <!-- Header with Title, Calendar Icon, and Edit Toggle -->
-    <div class="widget-header-row">
-      <div class="widget-title">
-        <!-- Calendar Icon -->
-        <svg viewBox="0 0 24 24">
-          <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
-        </svg>
-        Today
+
+    <!-- CLASSES SECTION -->
+    <div class="section-wrapper">
+      <div class="widget-header-row">
+        <div class="widget-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
+          </svg>
+          Today
+        </div>
+        <button class="edit-toggle-btn" id="edit-classes-toggle" title="Edit Schedule">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+        </button>
       </div>
-      <!-- Edit Toggle Button -->
-      <button class="edit-toggle-btn" id="edit-toggle" title="Edit Schedule">
+
+      <div id="classes-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
+
+      <div class="edit-panel" id="edit-classes-panel">
+        <div id="edit-classes-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <button class="add-btn" id="add-class-btn">+ Add Class</button>
+      </div>
+    </div>
+
+    <!-- TO DO LIST SECTION -->
+    <div class="section-wrapper">
+      <div class="widget-header-row">
+        <div class="widget-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+          </svg>
+          To Do
+        </div>
+      </div>
+
+      <div id="todo-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
+      
+      <!-- Plus Button to add tasks -->
+      <button class="add-todo-icon-btn" id="add-todo-icon-btn" title="Add Task">
         <svg viewBox="0 0 24 24">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
         </svg>
       </button>
+
+      <button class="clear-done-btn" id="clear-done-btn" style="display: none;">Clear Completed</button>
     </div>
 
-    <!-- Today's Classes List Stack -->
-    <div id="classes-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
-
-    <!-- Edit Panel -->
-    <div class="edit-panel" id="edit-panel">
-      <div id="edit-items-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-      <button class="add-btn" id="add-btn">+ Add Class</button>
-    </div>
   </div>
 
   <script>
@@ -259,22 +398,33 @@
       { name: "Calculus I", days: ["Tue", "Thu"] }
     ];
 
+    const defaultTodos = [
+      { text: "Finish assignment", done: false },
+      { text: "Review lecture notes", done: false }
+    ];
+
     let classes = JSON.parse(localStorage.getItem('todays_classes')) || defaultClasses;
+    let todos = JSON.parse(localStorage.getItem('todo_items')) || defaultTodos;
 
+    // Elements - Classes
     const classesListEl = document.getElementById('classes-list');
-    const editToggleEl = document.getElementById('edit-toggle');
-    const editPanelEl = document.getElementById('edit-panel');
-    const editItemsContainerEl = document.getElementById('edit-items-container');
-    const addBtnEl = document.getElementById('add-btn');
+    const editClassesToggleEl = document.getElementById('edit-classes-toggle');
+    const editClassesPanelEl = document.getElementById('edit-classes-panel');
+    const editClassesContainerEl = document.getElementById('edit-classes-container');
+    const addClassBtnEl = document.getElementById('add-class-btn');
 
-    function saveClasses() {
-      localStorage.setItem('todays_classes', JSON.stringify(classes));
-    }
+    // Elements - To Do
+    const todoListEl = document.getElementById('todo-list');
+    const addTodoIconBtnEl = document.getElementById('add-todo-icon-btn');
+    const clearDoneBtnEl = document.getElementById('clear-done-btn');
 
-    function renderWidget() {
+    // Storage Helpers
+    function saveClasses() { localStorage.setItem('todays_classes', JSON.stringify(classes)); }
+    function saveTodos() { localStorage.setItem('todo_items', JSON.stringify(todos)); }
+
+    /* ================= CLASSES WIDGET LOGIC ================= */
+    function renderClasses() {
       const todayString = new Date().toLocaleString('en-US', { weekday: 'short' });
-
-      // Keep track of both the class object and its original index in the main `classes` array
       const todaysClasses = [];
       classes.forEach((cls, originalIndex) => {
         if (cls.days && cls.days.includes(todayString)) {
@@ -283,10 +433,9 @@
       });
 
       classesListEl.innerHTML = '';
-      
       if (todaysClasses.length === 0) {
         const noClassBtn = document.createElement('div');
-        noClassBtn.className = 'no-classes-btn';
+        noClassBtn.className = 'empty-pill';
         noClassBtn.textContent = 'No Classes';
         classesListEl.appendChild(noClassBtn);
         return;
@@ -294,14 +443,12 @@
 
       todaysClasses.forEach(item => {
         const btn = document.createElement('div');
-        btn.className = 'class-btn';
+        btn.className = 'pill-btn';
         
-        // Use its original index to pick the color so it stays consistent across days
         const colorIndex = Math.min(item.originalIndex, classColors.length - 1);
         const color = classColors[colorIndex];
         btn.style.backgroundColor = color;
 
-        // Dark text for the lightest background (Class 1), white text for the rest
         if (colorIndex === 0) {
           btn.style.color = '#1f2937';
         }
@@ -311,13 +458,12 @@
       });
     }
 
-    function renderEditPanel() {
-      editItemsContainerEl.innerHTML = '';
+    function renderEditClassesPanel() {
+      editClassesContainerEl.innerHTML = '';
       classes.forEach((cls, index) => {
         const item = document.createElement('div');
-        item.className = 'class-edit-item';
+        item.className = 'edit-item';
 
-        // Row 1: Name & Delete
         const row1 = document.createElement('div');
         row1.className = 'edit-row';
 
@@ -328,7 +474,7 @@
         nameInput.oninput = (e) => {
           classes[index].name = e.target.value;
           saveClasses();
-          renderWidget();
+          renderClasses();
         };
 
         const delBtn = document.createElement('button');
@@ -337,14 +483,13 @@
         delBtn.onclick = () => {
           classes.splice(index, 1);
           saveClasses();
-          renderWidget();
-          renderEditPanel();
+          renderClasses();
+          renderEditClassesPanel();
         };
 
         row1.appendChild(nameInput);
         row1.appendChild(delBtn);
 
-        // Row 2: All 7 Days Checkboxes
         const daysRow = document.createElement('div');
         daysRow.className = 'days-selector';
 
@@ -363,7 +508,7 @@
               classes[index].days = classes[index].days.filter(d => d !== day);
             }
             saveClasses();
-            renderWidget();
+            renderClasses();
           };
 
           label.appendChild(checkbox);
@@ -373,26 +518,138 @@
 
         item.appendChild(row1);
         item.appendChild(daysRow);
-        editItemsContainerEl.appendChild(item);
+        editClassesContainerEl.appendChild(item);
       });
     }
 
-    editToggleEl.addEventListener('click', () => {
-      const isActive = editPanelEl.classList.toggle('active');
-      if (isActive) {
-        renderEditPanel();
-      }
+    editClassesToggleEl.addEventListener('click', () => {
+      const isActive = editClassesPanelEl.classList.toggle('active');
+      if (isActive) renderEditClassesPanel();
     });
 
-    addBtnEl.addEventListener('click', () => {
+    addClassBtnEl.addEventListener('click', () => {
       classes.push({ name: `Class ${classes.length + 1}`, days: ['Mon'] });
       saveClasses();
-      renderWidget();
-      renderEditPanel();
+      renderClasses();
+      renderEditClassesPanel();
     });
 
-    // Initial render
-    renderWidget();
+
+    /* ================= TO DO LIST LOGIC ================= */
+    let editingIndex = null; // Track which task is currently being edited inline
+
+    function renderTodos() {
+      todoListEl.innerHTML = '';
+
+      if (todos.length === 0) {
+        const emptyBtn = document.createElement('div');
+        emptyBtn.className = 'empty-pill';
+        emptyBtn.textContent = 'No Tasks';
+        todoListEl.appendChild(emptyBtn);
+        clearDoneBtnEl.style.display = 'none';
+        return;
+      }
+
+      let hasDoneItems = false;
+
+      todos.forEach((todo, index) => {
+        if (todo.done) hasDoneItems = true;
+
+        const row = document.createElement('div');
+        row.className = 'todo-row';
+
+        // If this specific task is in edit mode, show an input field
+        if (editingIndex === index) {
+          const input = document.createElement('input');
+          input.className = 'todo-inline-input';
+          input.value = todo.text;
+          input.autofocus = true;
+
+          input.oninput = (e) => {
+            todos[index].text = e.target.value;
+            saveTodos();
+          };
+
+          // Finish editing on Enter or blur
+          input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+              editingIndex = null;
+              renderTodos();
+            }
+          };
+          input.onblur = () => {
+            editingIndex = null;
+            renderTodos();
+          };
+
+          row.appendChild(input);
+        } else {
+          // Normal pill view
+          const btn = document.createElement('div');
+          btn.className = 'pill-btn' + (todo.done ? ' completed' : '');
+          btn.style.backgroundColor = '#8c9aa7';
+          btn.textContent = todo.text || 'Task';
+          
+          // Toggle completed status on click
+          btn.onclick = () => {
+            todos[index].done = !todos[index].done;
+            saveTodos();
+            renderTodos();
+          };
+
+          row.appendChild(btn);
+
+          // Edit Button next to task
+          const editBtn = document.createElement('button');
+          editBtn.className = 'task-action-btn';
+          editBtn.title = 'Edit Task';
+          editBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            editingIndex = index;
+            renderTodos();
+          };
+          row.appendChild(editBtn);
+
+          // Delete Button next to task
+          const delBtn = document.createElement('button');
+          delBtn.className = 'task-action-btn delete';
+          delBtn.title = 'Delete Task';
+          delBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+          delBtn.onclick = (e) => {
+            e.stopPropagation();
+            todos.splice(index, 1);
+            if (editingIndex === index) editingIndex = null;
+            saveTodos();
+            renderTodos();
+          };
+          row.appendChild(delBtn);
+        }
+
+        todoListEl.appendChild(row);
+      });
+
+      // Show/hide Clear Completed button
+      clearDoneBtnEl.style.display = hasDoneItems ? 'block' : 'none';
+    }
+
+    addTodoIconBtnEl.addEventListener('click', () => {
+      todos.push({ text: 'New Task', done: false });
+      editingIndex = todos.length - 1; // Automatically open the new task in edit mode
+      saveTodos();
+      renderTodos();
+    });
+
+    clearDoneBtnEl.addEventListener('click', () => {
+      todos = todos.filter(t => !t.done);
+      editingIndex = null;
+      saveTodos();
+      renderTodos();
+    });
+
+    // Initial Renders
+    renderClasses();
+    renderTodos();
   </script>
 </body>
 </html>
