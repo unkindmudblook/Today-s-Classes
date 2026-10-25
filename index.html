@@ -16,7 +16,8 @@
       background: transparent !important;
       width: 100%;
       height: 100%;
-      overflow: auto;
+      overflow-x: auto; /* Allows smooth scrolling if Notion shrinks it */
+      overflow-y: auto;
     }
 
     .container {
@@ -24,8 +25,9 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 16px;
-      padding: 0;
+      padding: 4px;
       margin: 0;
+      min-width: 240px; /* Prevents Notion from crushing it into oblivion */
     }
 
     .section-wrapper {
@@ -43,6 +45,7 @@
       gap: 6px;
       margin-bottom: 2px;
       user-select: none;
+      white-space: nowrap;
     }
 
     .widget-title {
@@ -59,6 +62,7 @@
       width: 13px;
       height: 13px;
       fill: #6b7280;
+      flex-shrink: 0;
     }
 
     /* Edit Button / Header Icon Button */
@@ -75,6 +79,7 @@
       opacity: 0.6;
       transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
       margin-left: 2px;
+      flex-shrink: 0;
     }
 
     .edit-toggle-btn:hover, .clear-done-icon-btn:hover {
@@ -93,7 +98,7 @@
       fill: currentColor;
     }
 
-    /* Pill Button Styling (Clips tightly to content width without extra horizontal space) */
+    /* Pill Button Styling */
     .pill-btn {
       display: inline-block;
       background-color: #8c9aa7;
@@ -103,14 +108,14 @@
       padding: 5px 14px;
       border-radius: 9999px;
       border: none;
-      /* Max width restricted so ~15 chars is the absolute widest before wrapping */
-      max-width: 125px;
+      max-width: 150px;
       text-align: center;
       word-break: break-word;
       line-height: 1.25;
       user-select: none;
       cursor: pointer;
       transition: opacity 0.15s ease, transform 0.1s ease;
+      flex-shrink: 0;
     }
 
     .pill-btn:hover {
@@ -121,13 +126,11 @@
       transform: scale(0.98);
     }
 
-    /* Completed Task Pill State */
     .pill-btn.completed {
       text-decoration: line-through;
       opacity: 0.45;
     }
 
-    /* Empty / Default Pills */
     .empty-pill {
       display: inline-block;
       background-color: #8c9aa7;
@@ -138,16 +141,16 @@
       border-radius: 9999px;
       user-select: none;
       opacity: 0.8;
+      white-space: nowrap;
     }
 
-    /* To-Do Item Row */
     .todo-row {
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
     }
 
-    /* Inline Task Edit Input */
     .todo-inline-input {
       background-color: #ffffff;
       border: 1px solid #8c9aa7;
@@ -157,10 +160,10 @@
       font-weight: 500;
       padding: 4px 14px;
       outline: none;
-      max-width: 125px;
+      max-width: 150px;
+      flex-shrink: 0;
     }
 
-    /* Task Specific Edit/Delete Icon Buttons */
     .task-action-btn {
       background: transparent;
       border: none;
@@ -174,6 +177,7 @@
       border-radius: 4px;
       opacity: 0.6;
       transition: opacity 0.15s ease, background-color 0.15s ease;
+      flex-shrink: 0;
     }
 
     .task-action-btn:hover {
@@ -192,7 +196,6 @@
       background-color: rgba(239, 68, 68, 0.1);
     }
 
-    /* Plus Add Button for To-Do */
     .add-todo-icon-btn {
       background: transparent;
       border: none;
@@ -207,6 +210,7 @@
       opacity: 0.7;
       transition: opacity 0.15s ease, background-color 0.15s ease;
       margin-top: 2px;
+      flex-shrink: 0;
     }
 
     .add-todo-icon-btn:hover {
@@ -220,7 +224,6 @@
       fill: currentColor;
     }
 
-    /* Edit Panel Styling (White Background - for Classes) */
     .edit-panel {
       display: none;
       background-color: #ffffff;
@@ -228,7 +231,7 @@
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 310px;
+      width: 280px;
       margin-top: 4px;
       flex-direction: column;
       gap: 10px;
@@ -346,7 +349,6 @@
           </svg>
           To Do
         </div>
-        <!-- Sleek 'x' button for clearing completed tasks -->
         <button class="clear-done-icon-btn" id="clear-done-btn" title="Clear Completed" style="display: none;">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -356,7 +358,6 @@
 
       <div id="todo-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
       
-      <!-- Plus Button to add tasks -->
       <button class="add-todo-icon-btn" id="add-todo-icon-btn" title="Add Task">
         <svg viewBox="0 0 24 24">
           <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -390,23 +391,19 @@
     let classes = JSON.parse(localStorage.getItem('todays_classes')) || defaultClasses;
     let todos = JSON.parse(localStorage.getItem('todo_items')) || defaultTodos;
 
-    // Elements - Classes
     const classesListEl = document.getElementById('classes-list');
     const editClassesToggleEl = document.getElementById('edit-classes-toggle');
     const editClassesPanelEl = document.getElementById('edit-classes-panel');
     const editClassesContainerEl = document.getElementById('edit-classes-container');
     const addClassBtnEl = document.getElementById('add-class-btn');
 
-    // Elements - To Do
     const todoListEl = document.getElementById('todo-list');
     const addTodoIconBtnEl = document.getElementById('add-todo-icon-btn');
     const clearDoneBtnEl = document.getElementById('clear-done-btn');
 
-    // Storage Helpers
     function saveClasses() { localStorage.setItem('todays_classes', JSON.stringify(classes)); }
     function saveTodos() { localStorage.setItem('todo_items', JSON.stringify(todos)); }
 
-    /* ================= CLASSES WIDGET LOGIC ================= */
     function renderClasses() {
       const todayString = new Date().toLocaleString('en-US', { weekday: 'short' });
       const todaysClasses = [];
@@ -518,8 +515,6 @@
       renderEditClassesPanel();
     });
 
-
-    /* ================= TO DO LIST LOGIC ================= */
     let editingIndex = null;
 
     function renderTodos() {
@@ -624,7 +619,6 @@
       renderTodos();
     });
 
-    // Initial Renders
     renderClasses();
     renderTodos();
   </script>
