@@ -548,7 +548,6 @@
           const input = document.createElement('input');
           input.className = 'todo-inline-input';
           input.value = todo.text;
-          input.autofocus = true;
 
           input.oninput = (e) => {
             todos[index].text = e.target.value;
@@ -567,6 +566,11 @@
           };
 
           row.appendChild(input);
+          
+          setTimeout(() => {
+            input.focus();
+            input.select();
+          }, 0);
         } else {
           const btn = document.createElement('div');
           btn.className = 'pill-btn' + (todo.done ? ' completed' : '');
