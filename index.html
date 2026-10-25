@@ -61,8 +61,8 @@
       fill: #6b7280;
     }
 
-    /* Edit Button in Header */
-    .edit-toggle-btn {
+    /* Edit Button / Header Icon Button */
+    .edit-toggle-btn, .clear-done-icon-btn {
       background: transparent;
       border: none;
       color: #8c9aa7;
@@ -73,35 +73,41 @@
       justify-content: center;
       border-radius: 4px;
       opacity: 0.6;
-      transition: opacity 0.15s ease, background-color 0.15s ease;
+      transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
       margin-left: 2px;
     }
 
-    .edit-toggle-btn:hover {
+    .edit-toggle-btn:hover, .clear-done-icon-btn:hover {
       opacity: 1;
       background-color: rgba(140, 154, 167, 0.15);
     }
 
-    .edit-toggle-btn svg {
+    .clear-done-icon-btn:hover {
+      color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .edit-toggle-btn svg, .clear-done-icon-btn svg {
       width: 13px;
       height: 13px;
       fill: currentColor;
     }
 
-    /* Pill Button Styling (Shared across Classes & Tasks) */
+    /* Pill Button Styling (Clips tightly to content width without extra horizontal space) */
     .pill-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
+      background-color: #8c9aa7;
       color: #ffffff;
       font-size: 13px;
       font-weight: 500;
-      height: 28px;
-      padding: 0 14px;
+      padding: 5px 14px;
       border-radius: 9999px;
       border: none;
-      width: fit-content;
-      white-space: nowrap;
+      /* Max width restricted so ~15 chars is the absolute widest before wrapping */
+      max-width: 125px;
+      text-align: center;
+      word-break: break-word;
+      line-height: 1.25;
       user-select: none;
       cursor: pointer;
       transition: opacity 0.15s ease, transform 0.1s ease;
@@ -123,18 +129,13 @@
 
     /* Empty / Default Pills */
     .empty-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
       background-color: #8c9aa7;
       color: #ffffff;
       font-size: 13px;
       font-weight: 500;
-      height: 28px;
-      padding: 0 14px;
+      padding: 5px 14px;
       border-radius: 9999px;
-      width: fit-content;
-      white-space: nowrap;
       user-select: none;
       opacity: 0.8;
     }
@@ -154,10 +155,9 @@
       color: #1f2937;
       font-size: 13px;
       font-weight: 500;
-      height: 28px;
-      padding: 0 14px;
+      padding: 4px 14px;
       outline: none;
-      width: 180px;
+      max-width: 125px;
     }
 
     /* Task Specific Edit/Delete Icon Buttons */
@@ -220,27 +220,7 @@
       fill: currentColor;
     }
 
-    /* Clear Done Action Button */
-    .clear-done-btn {
-      background: transparent;
-      border: none;
-      color: #6b7280;
-      font-size: 11px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 4px;
-      opacity: 0.75;
-      transition: opacity 0.15s ease, background-color 0.15s ease;
-      margin-top: 2px;
-    }
-
-    .clear-done-btn:hover {
-      opacity: 1;
-      background-color: rgba(107, 114, 128, 0.12);
-    }
-
-    /* Edit Panel Styling (White Background - for Classes only now) */
+    /* Edit Panel Styling (White Background - for Classes) */
     .edit-panel {
       display: none;
       background-color: #ffffff;
@@ -366,6 +346,12 @@
           </svg>
           To Do
         </div>
+        <!-- Sleek 'x' button for clearing completed tasks -->
+        <button class="clear-done-icon-btn" id="clear-done-btn" title="Clear Completed" style="display: none;">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
       </div>
 
       <div id="todo-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
@@ -376,8 +362,6 @@
           <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
         </svg>
       </button>
-
-      <button class="clear-done-btn" id="clear-done-btn" style="display: none;">Clear Completed</button>
     </div>
 
   </div>
@@ -536,7 +520,7 @@
 
 
     /* ================= TO DO LIST LOGIC ================= */
-    let editingIndex = null; // Track which task is currently being edited inline
+    let editingIndex = null;
 
     function renderTodos() {
       todoListEl.innerHTML = '';
@@ -558,7 +542,6 @@
         const row = document.createElement('div');
         row.className = 'todo-row';
 
-        // If this specific task is in edit mode, show an input field
         if (editingIndex === index) {
           const input = document.createElement('input');
           input.className = 'todo-inline-input';
@@ -570,7 +553,6 @@
             saveTodos();
           };
 
-          // Finish editing on Enter or blur
           input.onkeydown = (e) => {
             if (e.key === 'Enter') {
               editingIndex = null;
@@ -584,13 +566,11 @@
 
           row.appendChild(input);
         } else {
-          // Normal pill view
           const btn = document.createElement('div');
           btn.className = 'pill-btn' + (todo.done ? ' completed' : '');
           btn.style.backgroundColor = '#8c9aa7';
           btn.textContent = todo.text || 'Task';
           
-          // Toggle completed status on click
           btn.onclick = () => {
             todos[index].done = !todos[index].done;
             saveTodos();
@@ -599,7 +579,6 @@
 
           row.appendChild(btn);
 
-          // Edit Button next to task
           const editBtn = document.createElement('button');
           editBtn.className = 'task-action-btn';
           editBtn.title = 'Edit Task';
@@ -611,7 +590,6 @@
           };
           row.appendChild(editBtn);
 
-          // Delete Button next to task
           const delBtn = document.createElement('button');
           delBtn.className = 'task-action-btn delete';
           delBtn.title = 'Delete Task';
@@ -629,13 +607,12 @@
         todoListEl.appendChild(row);
       });
 
-      // Show/hide Clear Completed button
-      clearDoneBtnEl.style.display = hasDoneItems ? 'block' : 'none';
+      clearDoneBtnEl.style.display = hasDoneItems ? 'inline-flex' : 'none';
     }
 
     addTodoIconBtnEl.addEventListener('click', () => {
       todos.push({ text: 'New Task', done: false });
-      editingIndex = todos.length - 1; // Automatically open the new task in edit mode
+      editingIndex = todos.length - 1;
       saveTodos();
       renderTodos();
     });
