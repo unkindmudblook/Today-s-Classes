@@ -16,7 +16,7 @@
       background: transparent !important;
       width: 100%;
       height: 100%;
-      overflow-x: auto; /* Allows smooth scrolling if Notion shrinks it */
+      overflow-x: auto;
       overflow-y: auto;
     }
 
@@ -27,7 +27,7 @@
       gap: 16px;
       padding: 4px;
       margin: 0;
-      min-width: 240px; /* Prevents Notion from crushing it into oblivion */
+      min-width: 240px;
     }
 
     .section-wrapper {
@@ -63,6 +63,18 @@
       height: 13px;
       fill: #6b7280;
       flex-shrink: 0;
+    }
+
+    /* Day Subheadings (Title Case) */
+    .day-group-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      margin-top: 6px;
+      margin-bottom: 2px;
+      width: 100%;
     }
 
     /* Edit Button / Header Icon Button */
@@ -146,10 +158,31 @@
 
     .todo-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 6px;
       white-space: normal;
       width: 100%;
+      cursor: grab;
+      border-top: 2px solid transparent;
+      border-bottom: 2px solid transparent;
+      border-radius: 6px;
+    }
+
+    .todo-row:active {
+      cursor: grabbing;
+    }
+
+    .todo-row.dragging {
+      opacity: 0.4;
+      background: #f3f4f6;
+    }
+
+    .todo-row.drag-over-top {
+      border-top-color: #8c9aa7;
+    }
+
+    .todo-row.drag-over-bottom {
+      border-bottom-color: #8c9aa7;
     }
 
     .todo-row .pill-btn {
@@ -180,8 +213,8 @@
       border: none;
       color: #8c9aa7;
       cursor: pointer;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -197,8 +230,8 @@
     }
 
     .task-action-btn svg {
-      width: 13px;
-      height: 13px;
+      width: 12px;
+      height: 12px;
       fill: currentColor;
     }
 
@@ -321,6 +354,15 @@
     .add-btn:hover {
       background-color: #f9fafb;
     }
+
+    .task-day-select {
+      padding: 4px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 11px;
+      outline: none;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
@@ -367,7 +409,7 @@
         </button>
       </div>
 
-      <div id="todo-list" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"></div>
+      <div id="todo-list" style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; width: 100%;"></div>
       
       <button class="add-todo-icon-btn" id="add-todo-icon-btn" title="Add Task">
         <svg viewBox="0 0 24 24">
@@ -380,6 +422,16 @@
 
   <script>
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
+    const fullDayNames = {
+      "Sun": "Sunday",
+      "Mon": "Monday",
+      "Tue": "Tuesday",
+      "Wed": "Wednesday",
+      "Thu": "Thursday",
+      "Fri": "Friday",
+      "Sat": "Saturday"
+    };
 
     const classColors = [
       "#dbe1e4", // Class 1
@@ -395,8 +447,8 @@
     ];
 
     const defaultTodos = [
-      { text: "Finish assignment", done: false },
-      { text: "Review lecture notes", done: false }
+      { text: "Finish assignment", done: false, day: null },
+      { text: "Review lecture notes", done: false, day: null }
     ];
 
     let classes = JSON.parse(localStorage.getItem('todays_classes')) || defaultClasses;
@@ -527,6 +579,7 @@
     });
 
     let editingIndex = null;
+    let draggedIndex = null;
 
     function renderTodos() {
       todoListEl.innerHTML = '';
@@ -541,87 +594,200 @@
       }
 
       let hasDoneItems = false;
+      const allGroups = [...daysOfWeek, null]; // Days ordered, followed by Undated (null)
 
-      todos.forEach((todo, index) => {
-        if (todo.done) hasDoneItems = true;
+      allGroups.forEach(groupDay => {
+        const groupTasks = todos.map((t, idx) => ({ t, idx })).filter(item => item.t.day === groupDay);
+        
+        if (groupTasks.length > 0) {
+          const header = document.createElement('div');
+          header.className = 'day-group-header';
+          header.textContent = groupDay ? fullDayNames[groupDay] : 'Undated';
+          todoListEl.appendChild(header);
 
-        const row = document.createElement('div');
-        row.className = 'todo-row';
+          groupTasks.forEach((item) => {
+            const { t: todo, idx: index } = item;
+            if (todo.done) hasDoneItems = true;
 
-        if (editingIndex === index) {
-          const input = document.createElement('input');
-          input.className = 'todo-inline-input';
-          input.value = todo.text;
+            const row = document.createElement('div');
+            row.className = 'todo-row';
 
-          input.oninput = (e) => {
-            todos[index].text = e.target.value;
-            saveTodos();
-          };
+            if (editingIndex === index) {
+              const input = document.createElement('input');
+              input.className = 'todo-inline-input';
+              input.value = todo.text;
 
-          input.onkeydown = (e) => {
-            if (e.key === 'Enter') {
-              editingIndex = null;
-              renderTodos();
+              input.oninput = (e) => {
+                todos[index].text = e.target.value;
+                saveTodos();
+              };
+
+              input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                  editingIndex = null;
+                  renderTodos();
+                }
+              };
+
+              input.onblur = (e) => {
+                setTimeout(() => {
+                  if (document.activeElement !== daySelect && !row.contains(document.activeElement)) {
+                    editingIndex = null;
+                    renderTodos();
+                  }
+                }, 150);
+              };
+
+              row.appendChild(input);
+
+              // Day selector while editing
+              const daySelect = document.createElement('select');
+              daySelect.className = 'task-day-select';
+              
+              const undatedOpt = document.createElement('option');
+              undatedOpt.value = "NONE";
+              undatedOpt.textContent = "Undated";
+              if (todo.day === null || todo.day === undefined) undatedOpt.selected = true;
+              daySelect.appendChild(undatedOpt);
+
+              daysOfWeek.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = fullDayNames[d];
+                if (todo.day === d) opt.selected = true;
+                daySelect.appendChild(opt);
+              });
+
+              daySelect.onchange = (e) => {
+                todos[index].day = e.target.value === "NONE" ? null : e.target.value;
+                saveTodos();
+                renderTodos();
+              };
+
+              daySelect.onblur = (e) => {
+                setTimeout(() => {
+                  if (document.activeElement !== input && !row.contains(document.activeElement)) {
+                    editingIndex = null;
+                    renderTodos();
+                  }
+                }, 150);
+              };
+
+              row.appendChild(daySelect);
+              
+              setTimeout(() => {
+                input.focus();
+                input.select();
+              }, 0);
+            } else {
+              row.draggable = true;
+              row.dataset.index = index;
+
+              row.addEventListener('dragstart', (e) => {
+                draggedIndex = index;
+                setTimeout(() => row.classList.add('dragging'), 0);
+              });
+
+              row.addEventListener('dragend', () => {
+                row.classList.remove('dragging');
+                draggedIndex = null;
+                document.querySelectorAll('.todo-row').forEach(r => {
+                  r.classList.remove('drag-over-top');
+                  r.classList.remove('drag-over-bottom');
+                });
+              });
+
+              row.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (draggedIndex !== null && draggedIndex !== index) {
+                  if (todos[draggedIndex].day === todo.day) {
+                    const rect = row.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    
+                    if (e.clientY < midpoint) {
+                      row.classList.add('drag-over-top');
+                      row.classList.remove('drag-over-bottom');
+                    } else {
+                      row.classList.add('drag-over-bottom');
+                      row.classList.remove('drag-over-top');
+                    }
+                  }
+                }
+              });
+
+              row.addEventListener('dragleave', () => {
+                row.classList.remove('drag-over-top');
+                row.classList.remove('drag-over-bottom');
+              });
+
+              row.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const isBottom = row.classList.contains('drag-over-bottom');
+                row.classList.remove('drag-over-top');
+                row.classList.remove('drag-over-bottom');
+
+                if (draggedIndex !== null && draggedIndex !== index) {
+                  if (todos[draggedIndex].day === todo.day) {
+                    const draggedItem = todos.splice(draggedIndex, 1)[0];
+                    let targetIdx = todos.findIndex((t, idx) => idx === index);
+                    if (isBottom) {
+                      targetIdx += 1;
+                    }
+                    todos.splice(targetIdx, 0, draggedItem);
+                    saveTodos();
+                    renderTodos();
+                  }
+                }
+              });
+
+              const btn = document.createElement('div');
+              btn.className = 'pill-btn' + (todo.done ? ' completed' : '');
+              btn.style.backgroundColor = '#8c9aa7';
+              btn.textContent = todo.text || 'Task';
+              
+              btn.onclick = () => {
+                todos[index].done = !todos[index].done;
+                saveTodos();
+                renderTodos();
+              };
+
+              row.appendChild(btn);
+
+              const editBtn = document.createElement('button');
+              editBtn.className = 'task-action-btn';
+              editBtn.title = 'Edit Task';
+              editBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+              editBtn.onclick = (e) => {
+                e.stopPropagation();
+                editingIndex = index;
+                renderTodos();
+              };
+              row.appendChild(editBtn);
+
+              const delBtn = document.createElement('button');
+              delBtn.className = 'task-action-btn delete';
+              delBtn.title = 'Delete Task';
+              delBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+              delBtn.onclick = (e) => {
+                e.stopPropagation();
+                todos.splice(index, 1);
+                if (editingIndex === index) editingIndex = null;
+                saveTodos();
+                renderTodos();
+              };
+              row.appendChild(delBtn);
             }
-          };
-          input.onblur = () => {
-            editingIndex = null;
-            renderTodos();
-          };
 
-          row.appendChild(input);
-          
-          setTimeout(() => {
-            input.focus();
-            input.select();
-          }, 0);
-        } else {
-          const btn = document.createElement('div');
-          btn.className = 'pill-btn' + (todo.done ? ' completed' : '');
-          btn.style.backgroundColor = '#8c9aa7';
-          btn.textContent = todo.text || 'Task';
-          
-          btn.onclick = () => {
-            todos[index].done = !todos[index].done;
-            saveTodos();
-            renderTodos();
-          };
-
-          row.appendChild(btn);
-
-          const editBtn = document.createElement('button');
-          editBtn.className = 'task-action-btn';
-          editBtn.title = 'Edit Task';
-          editBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
-          editBtn.onclick = (e) => {
-            e.stopPropagation();
-            editingIndex = index;
-            renderTodos();
-          };
-          row.appendChild(editBtn);
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'task-action-btn delete';
-          delBtn.title = 'Delete Task';
-          delBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
-          delBtn.onclick = (e) => {
-            e.stopPropagation();
-            todos.splice(index, 1);
-            if (editingIndex === index) editingIndex = null;
-            saveTodos();
-            renderTodos();
-          };
-          row.appendChild(delBtn);
+            todoListEl.appendChild(row);
+          });
         }
-
-        todoListEl.appendChild(row);
       });
 
       clearDoneBtnEl.style.display = hasDoneItems ? 'inline-flex' : 'none';
     }
 
     addTodoIconBtnEl.addEventListener('click', () => {
-      todos.push({ text: 'New Task', done: false });
+      todos.push({ text: 'New Task', done: false, day: null });
       editingIndex = todos.length - 1;
       saveTodos();
       renderTodos();
